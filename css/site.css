@@ -48,13 +48,22 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .stage.far { visibility: hidden; pointer-events: none; }
 /* a memory behind the card: a small prompt on the drawing; tapping dims the drawing and shows the text */
 .stage .prompt {
-  position: absolute; bottom: calc(100% + 14px); left: 0; right: 0; text-align: center; z-index: 4;
+  position: absolute; bottom: calc(100% + 14px); left: 50%; transform: translateX(-50%); text-align: center; z-index: 4;   /* only as wide as the words, so the glint crosses them slowly */
   font-family: var(--caption-font); font-size: 16px; letter-spacing: .02em; color: var(--dim);
   white-space: nowrap; cursor: pointer; padding: 6px 14px;   /* clickable, with a little room around the words */
   opacity: 0; transition: opacity 1.2s ease, color .6s ease;
 }
-.stage .prompt:hover { color: var(--pink); }
-.stage.on .prompt { opacity: .85; }
+/* every few seconds the words glint: up to white, then pink with a soft glow, then back to grey, so the prompt
+   catches her eye. a mouse over it holds it pink. */
+.stage.on .prompt { opacity: .85; animation: glint 7s ease-in-out 2.5s infinite; }
+.stage.on .prompt:hover { animation: none; color: var(--pink); }
+@keyframes glint {
+  0%, 100% { color: var(--dim); text-shadow: none; }
+  6%       { color: #fff; text-shadow: 0 0 14px rgba(255, 143, 184, .95); }
+  13%      { color: var(--pink); text-shadow: 0 0 6px rgba(255, 143, 184, .6); }
+  24%      { color: var(--dim); text-shadow: none; }
+}
+@media (prefers-reduced-motion: reduce) { .stage.on .prompt { animation: none; } }
 .stage.open .prompt { opacity: 0; pointer-events: none; }
 .stage .memory {
   position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); min-height: 100%;   /* grows past the card if the text needs it */
