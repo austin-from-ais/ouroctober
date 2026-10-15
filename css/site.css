@@ -1,0 +1,364 @@
+/* One ground, one typeface, pink only as light. */
+:root {
+  --pink: #ff8fb8;
+  --pink-deep: #ff4f8b;
+  --text: #cfc8cc;
+  --dim: #7d7579;
+  --line: #221e20;
+  --paper: #e8e0db;
+  /* the captions under the memories: a quiet book serif from the system, no download. change here only. */
+  --caption-font: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, Georgia, "Times New Roman", serif;
+}
+html { background: #000; color: var(--text); -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: #000;
+  font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  overflow-x: hidden;
+}
+a { color: inherit; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+:focus-visible { outline: 1px solid var(--pink); outline-offset: 3px; }
+
+/* ---- The memories: one scene at a time, crossfading ----------------- */
+.deck {
+  position: fixed; inset: 0; background: #000; z-index: 1; overflow: hidden;
+  perspective: 1400px; perspective-origin: 50% 50%;
+  --card: 500px;
+  --band: calc(50vh - var(--card) / 2 - 12px);   /* the dark between the top of the screen and the card */
+}
+.deck[hidden] { display: none; }
+/* the deck crossfades with the pages: it fades out over them, and in over them, instead of cutting */
+.deck { transition: opacity 1.25s ease; }
+.deck.out { opacity: 0; pointer-events: none; }
+/* #pages, not .pages: the body also carries a 'pages' class for scrolling, and must never fade */
+#pages { transition: opacity 1.25s ease; }
+#pages.out { opacity: 0; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .deck, #pages { transition: none; } }
+/* each memory is a card in the flow; main.js sets its transform from its distance to the current one */
+.stage {
+  position: absolute; left: 50%; top: 50%;
+  width: var(--card); height: var(--card);
+  margin: calc(var(--card) / -2) 0 0 calc(var(--card) / -2);
+  background: #000; backface-visibility: hidden; --veil: 0;
+  -webkit-user-select: none; user-select: none; touch-action: pan-y; cursor: pointer;
+}
+.stage.on { cursor: default; }
+/* the neighbours sit back in the dark: a black veil over each card, set per frame by main.js */
+.stage::after { content: ''; position: absolute; inset: 0; background: #000; opacity: var(--veil); z-index: 2; pointer-events: none; }
+.stage.far { visibility: hidden; pointer-events: none; }
+/* a memory behind the card: a small prompt on the drawing; tapping dims the drawing and shows the text */
+.stage .prompt {
+  position: absolute; bottom: calc(100% + 14px); left: 0; right: 0; text-align: center; z-index: 4;
+  font-family: var(--caption-font); font-size: 16px; letter-spacing: .02em; color: var(--dim);
+  white-space: nowrap; cursor: pointer; padding: 6px 14px;   /* clickable, with a little room around the words */
+  opacity: 0; transition: opacity 1.2s ease, color .6s ease;
+}
+.stage .prompt:hover { color: var(--pink); }
+.stage.on .prompt { opacity: .85; }
+.stage.open .prompt { opacity: 0; pointer-events: none; }
+.stage .memory {
+  position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); min-height: 100%;   /* grows past the card if the text needs it */
+  z-index: 4; background: rgba(0,0,0,.93);
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  padding: 7% 8% 12%; box-sizing: border-box;
+  font-family: var(--caption-font); font-size: clamp(14px, calc(var(--card) * 0.031), 20px); line-height: 1.65; color: var(--text);
+  opacity: 0; visibility: hidden; transition: opacity 1.1s ease, visibility 0s linear 1.1s; pointer-events: none;
+}
+.stage.open .memory { opacity: 1; visibility: visible; transition: opacity 1.1s ease; }
+.stage .memory p { margin: 0 0 .9em; max-width: 34em; }
+.stage .memory p:last-child { margin-bottom: 0; }
+.stage > .ui { z-index: 5; }
+/* caption under the card; main.js fades and lifts it with the card's position */
+.caption {
+  position: absolute; left: 24px; right: 24px; top: calc(50% + var(--card) / 2 + 24px);
+  text-align: center; pointer-events: none; z-index: 1100; opacity: 0; visibility: hidden;
+  font-family: var(--caption-font); font-size: 18px; line-height: 1.5; color: var(--text); letter-spacing: .01em;
+}
+.caption span { display: block; }
+/* tiny pink stars along the top of the screen for a memory that asks for them; main.js fades the layer with its card */
+.sky { position: absolute; left: 0; right: 0; top: 0; height: calc(var(--band) - 36px); pointer-events: none; z-index: 1100; opacity: 0; visibility: hidden; } /* the dark above the card */
+.sky i {
+  position: absolute; display: block; border-radius: 50%; background: #ffd1e1;
+  box-shadow: 0 0 4px 1px rgba(255,143,184,.55);
+  animation: twinkle 3s ease-in-out infinite alternate;
+}
+@keyframes twinkle { from { opacity: .08; transform: scale(.7); } to { opacity: 1; transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .sky i { animation: none; opacity: .5; } }
+/* soap bubbles for a memory that asks for them: they rise behind the cards through the dark; main.js fades the layer with its card */
+.bubbles { position: absolute; left: 0; right: 0; top: 0; height: var(--band); pointer-events: none; z-index: 0; opacity: 0; visibility: hidden; }
+.bubbles i {
+  position: absolute; top: 100%; display: block;
+  animation: rise 14s linear infinite; will-change: transform;
+}
+.bubbles b {
+  display: block; width: 100%; height: 100%; border-radius: 50%;
+  background: radial-gradient(circle at 32% 30%, rgba(255,255,255,.35) 0, rgba(255,255,255,.04) 24%, rgba(255,143,184,0) 60%, rgba(255,143,184,.16) 100%);
+  box-shadow: inset 0 0 0 1px rgba(255,213,227,.22);
+  animation: sway 4s ease-in-out infinite alternate;
+}
+@keyframes rise {
+  0%   { transform: translateY(0); opacity: 0; }
+  12%  { opacity: .55; }
+  85%  { opacity: .55; }
+  100% { transform: translateY(calc(-1 * var(--band) - 16px)); opacity: 0; }
+}
+@keyframes sway { from { transform: translateX(-5px); } to { transform: translateX(5px); } }
+@media (prefers-reduced-motion: reduce) { .bubbles { display: none; } }
+/* soft dots for a memory that asks for them: each wanders slowly, circles a little and pulses, above the card */
+.dots { position: absolute; left: 0; right: 0; top: 0; height: var(--band); pointer-events: none; z-index: 0; opacity: 0; visibility: hidden; }
+.dots i { position: absolute; display: block; animation: wander 22s ease-in-out infinite; will-change: transform; }
+.dots b {
+  display: block; width: 100%; height: 100%; border-radius: 50%;
+  background: #ffd1e1; box-shadow: 0 0 6px 2px rgba(255,143,184,.35);
+  animation: circle 10s linear infinite;
+}
+@keyframes wander {
+  0%   { transform: translate(0, 0); opacity: .35; }
+  25%  { opacity: .9; }
+  50%  { transform: translate(var(--dx), var(--dy)); opacity: .4; }
+  75%  { opacity: .85; }
+  100% { transform: translate(0, 0); opacity: .35; }
+}
+@keyframes circle { from { transform: rotate(0deg) translateX(var(--r)) rotate(0deg); } to { transform: rotate(360deg) translateX(var(--r)) rotate(-360deg); } }
+@media (prefers-reduced-motion: reduce) { .dots i, .dots b { animation: none; } .dots i { opacity: .5; } }
+/* a street lamp for a memory that asks for it: the lamp head sits just above the screen and its pale pink cone
+   falls the whole height behind the card. it stutters on when the card arrives, then settles with tiny dips. */
+.lamp { position: absolute; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; opacity: 0; visibility: hidden; }
+.lamp i { position: absolute; display: block; opacity: 0; }
+.lamp .cone {
+  left: 50%; top: -6vh; width: 110vw; height: 112vh; margin-left: -55vw;
+  background: linear-gradient(to bottom, rgba(255,190,214,.34) 0, rgba(255,175,205,.16) 38%, rgba(255,160,195,.05) 72%, rgba(255,160,195,0) 100%);
+  clip-path: polygon(46% 0, 54% 0, 100% 100%, 0 100%);
+  filter: blur(14px);
+}
+.lamp .head {
+  left: 50%; top: -9vh; width: 44vw; height: 30vh; margin-left: -22vw; border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 30%, rgba(255,220,234,.5) 0, rgba(255,190,214,.18) 40%, rgba(255,190,214,0) 70%);
+}
+.lamp.lit i { animation: lampOn 2.8s steps(1, end) .5s both, lampSettle 11s linear 3.3s infinite; }
+@keyframes lampOn {
+  0% { opacity: 0; } 5% { opacity: .55; } 8% { opacity: 0; } 14% { opacity: .3; } 17% { opacity: 0; }
+  26% { opacity: .75; } 30% { opacity: .35; } 36% { opacity: .9; } 44% { opacity: .6; } 52% { opacity: 1; }
+  100% { opacity: 1; }
+}
+@keyframes lampSettle {
+  0%, 100% { opacity: 1; } 31% { opacity: 1; } 32% { opacity: .84; } 33% { opacity: 1; }
+  66% { opacity: 1; } 67% { opacity: .9; } 68.5% { opacity: 1; } 69% { opacity: .95; } 70% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) { .lamp.lit i { animation: none; opacity: 1; } }
+/* leaves for a memory that asks for them: small pink leaves blow left to right across the band above the card,
+   lifting and dipping on the way and tumbling as they go */
+.leaves { position: absolute; left: 0; right: 0; top: 0; height: var(--band); pointer-events: none; z-index: 0; overflow: hidden; opacity: 0; visibility: hidden; }
+.leaves i { position: absolute; left: -4vw; display: block; animation: blow 14s linear infinite; will-change: transform; }
+.leaves b {
+  display: block; width: 100%; height: 100%;
+  background: linear-gradient(135deg, #ffd1e1, rgba(255,143,184,.75));
+  border-radius: 100% 0 100% 0;
+  animation: tumble 2.6s ease-in-out infinite alternate;
+}
+@keyframes blow {
+  0%   { transform: translate(0, 0); }
+  20%  { transform: translate(22vw, calc(-1 * var(--bob))); }
+  45%  { transform: translate(50vw, calc(var(--bob) * .6)); }
+  70%  { transform: translate(78vw, calc(-1 * var(--bob) * .8)); }
+  100% { transform: translate(110vw, calc(var(--bob) * .4)); }
+}
+@keyframes tumble { from { transform: rotate(-40deg) scaleX(1); } to { transform: rotate(50deg) scaleX(.55); } }
+@media (prefers-reduced-motion: reduce) { .leaves { display: none; } }
+/* strings of lights for a memory that asks for them: two wires sag across the band above the card, with bulbs that
+   glow softly, each breathing on its own slow cycle */
+.lights { position: absolute; left: 0; right: 0; top: 0; height: var(--band); pointer-events: none; z-index: 0; opacity: 0; visibility: hidden; }
+.lights svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.lights path { fill: none; stroke: rgba(255,213,227,.22); stroke-width: 1px; vector-effect: non-scaling-stroke; }
+.lights i {
+  position: absolute; display: block; width: 7px; height: 7px; margin: 5px 0 0 -3.5px; border-radius: 50%;
+  background: #ffe1ec;
+  box-shadow: 0 0 6px 2px rgba(255,190,214,.7), 0 0 18px 7px rgba(255,143,184,.28);
+  animation: glow 4s ease-in-out infinite alternate;
+}
+.lights i::before { content: ''; position: absolute; left: 2.5px; top: -5px; width: 2px; height: 5px; background: rgba(255,213,227,.35); }   /* the little drop from the wire */
+@keyframes glow { from { opacity: .45; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .lights i { animation: none; opacity: .8; } }
+.caption .l2 { font-style: italic; color: var(--dim); font-size: 17px; }
+.stage > canvas, .stage > svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.stage > .ui { position: absolute; inset: 0; pointer-events: none; }
+.stage > .ui > * { pointer-events: auto; }
+body.pages { overflow: auto; }
+body:not(.pages) { overflow: hidden; }
+#pages { animation: pagein 1.8s ease; }
+#pages[hidden] { display: none; }
+@keyframes pagein { from { opacity: 0; } to { opacity: 1; } }
+
+/* A drawing, square, centred */
+.photo { position: absolute; inset: 0; }
+.photo img { width: 100%; height: 100%; display: block; object-fit: cover; }
+
+/* Drive: play button for the song */
+.play {
+  position: absolute; right: 7%; bottom: 9%;
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 1px solid rgba(255,143,184,.55);
+  color: var(--pink); display: grid; place-items: center;
+  box-shadow: 0 0 18px rgba(255,79,139,.18), inset 0 0 10px rgba(255,79,139,.12);
+  transition: box-shadow 1.2s ease, border-color 1.2s ease;
+}
+.play:hover, .play:focus-visible { border-color: rgba(255,143,184,.9); box-shadow: 0 0 26px rgba(255,79,139,.3), inset 0 0 12px rgba(255,79,139,.2); }
+.play svg { width: 14px; height: 14px; margin-left: 2px; }
+.song-embed {
+  position: absolute; left: 4%; right: 4%; bottom: 4%;
+  height: 80px; border-radius: 12px; overflow: hidden;
+  background: #000; opacity: 0; transition: opacity 2.4s ease;
+}
+.song-embed.in { opacity: 1; }
+.song-embed iframe { width: 100%; height: 100%; border: 0; display: block; }
+
+/* ---- Fixed controls --------------------------------------------------- */
+.sound, .step { position: fixed; z-index: 20; touch-action: manipulation; } /* no double-tap zoom on fast taps */
+.sound {
+  top: max(12px, env(safe-area-inset-top)); left: max(12px, env(safe-area-inset-left));
+  display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
+  padding: 8px 10px; color: var(--dim); font-size: 12px;
+  transition: color 1.2s ease;
+}
+.sound svg { width: 18px; height: 18px; fill: currentColor; stroke: currentColor; stroke-width: 1.2; stroke-linecap: round; }
+.sound svg path.w1, .sound svg path.w2 { fill: none; opacity: 0; transition: opacity 1.2s ease; }
+.sound[aria-pressed="true"] { color: var(--pink); }
+.sound[aria-pressed="true"] svg path.w1 { opacity: 1; }
+.sound[aria-pressed="true"] svg path.w2 { opacity: .6; }
+
+/* the three words along the top: where she is lit pink, the others dim */
+.top {
+  position: fixed; z-index: 20; top: 0; left: 0; right: 0; padding: max(12px, env(safe-area-inset-top)) 0 18px;
+  display: flex; justify-content: center; gap: 22px; pointer-events: none;
+  font-family: var(--caption-font); font-size: 15px; letter-spacing: .05em;
+}
+/* on the pages a soft black fade sits behind the words so text scrolling under them stays readable; it fades in and out
+   rather than switching, so the bar never has to redraw in one frame */
+.top::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to bottom, rgba(0,0,0,.92) 55%, rgba(0,0,0,0)); opacity: 0; transition: opacity 1.2s ease; }
+body.pages .top::before { opacity: 1; }
+.top a { pointer-events: auto; color: var(--dim); text-decoration: none; padding: 8px 6px; touch-action: manipulation; transition: color .9s ease; }
+.top a:hover, .top a:focus-visible { color: var(--text); outline: 0; }
+.top a.cur { color: var(--pink); }
+.top a[hidden] { display: none; }
+@media (max-width: 520px) { .sound .sound-label { display: none; } .top { gap: 16px; } }
+
+/* the arrows between memories, on the middle line of the screen */
+.step {
+  top: 50%; transform: translateY(-50%);
+  width: 64px; height: 88px; display: grid; place-items: center;
+  color: var(--pink); opacity: .9; transition: opacity 1.2s ease;
+}
+.step:hover, .step:focus-visible { opacity: 1; }
+.step[hidden] { display: none; }
+.step i {
+  width: 22px; height: 22px;
+  border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+  filter: drop-shadow(0 0 6px rgba(255,79,139,.55));
+}
+.step.next { right: max(10px, env(safe-area-inset-right)); }
+.step.next i { transform: rotate(-45deg) translateX(-4px); }
+.step.prev { left: max(10px, env(safe-area-inset-left)); }
+.step.prev i { transform: rotate(135deg) translateX(-4px); }
+@keyframes breathe { 0%,100% { opacity: .45; } 50% { opacity: 1; } }
+
+/* ---- After the road: October and the visit --------------------------- */
+.after { position: relative; background: #000; }
+.after .col { max-width: 36rem; margin: 0 auto; padding: 12vh 24px 10vh; }
+#october { border-top: 1px solid var(--line); }
+#october .col { padding-top: 14vh; }
+#visit { border-top: 1px solid var(--line); }
+#visit .col { padding-bottom: 24vh; }
+/* the headings speak in the same quiet serif as the captions and the words along the top, all lowercase */
+.after h2 { font-family: var(--caption-font); font-size: 30px; font-weight: 400; letter-spacing: .02em; margin: 0 0 10px; color: var(--text); }
+.after h3 { font-family: var(--caption-font); font-size: 21px; font-weight: 400; letter-spacing: .01em; margin: 0 0 6px; color: var(--text); }
+.after p { margin: 0 0 10px; }
+/* the countdown at the top of October: the days in pink, the second line set in a little */
+.after .count { font-family: var(--caption-font); font-size: 22px; line-height: 1.5; margin: 4px 0 8vh; color: var(--text); }
+.after .count span { display: block; }
+.after .count b { font-weight: 400; color: var(--pink); }
+.after .count .count-2 { padding-left: 2.4em; color: var(--dim); font-style: italic; }
+.after .intro { color: var(--dim); margin-bottom: 8vh; max-width: 30rem; font-family: var(--caption-font); font-size: 17px; font-style: italic; }
+.after .small { font-size: 13px; color: var(--dim); }
+.after .how { font-size: 14px; color: var(--dim); margin: -4px 0 0; }   /* the tea instruction under the intro */
+.after .ph { color: #5a5257; font-size: 13px; }  /* placeholder marker, visible until Austin writes the line */
+
+.act { display: grid; grid-template-columns: 120px 1fr; gap: 28px; align-items: start; margin: 0 0 10vh; }
+.act .art { width: 120px; height: 120px; }
+.act .art svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.act .art img.ink { width: 100%; height: 100%; display: block; object-fit: contain; opacity: .92; }
+.act .status { color: var(--pink); font-size: 13px; }
+.act .meta { font-size: 13px; color: var(--dim); }
+@media (max-width: 480px) {
+  .act { grid-template-columns: 1fr; gap: 12px; }
+  .act .art { width: 104px; height: 104px; }
+}
+
+/* Tea: three plain choices, the name in the serif, the notes under it. tap one to text the pick. */
+.tins { display: grid; gap: 20px; margin: 16px 0 6px; }
+.tin {
+  display: block; text-align: left; text-decoration: none; padding: 0; border: 0; background: none;
+  color: inherit; cursor: pointer; width: 100%;
+}
+.tin .tin-name { display: block; font-family: var(--caption-font); font-size: 19px; line-height: 1.4; color: var(--text); transition: color .9s ease; }
+@media (hover: hover) { .tin:hover .tin-name { color: var(--pink); } }   /* mouse only: a finger tap must not leave a sticky hover */
+.tin:focus-visible .tin-name, .tin.tapped .tin-name { color: var(--pink); }
+.tin:focus-visible { outline: 0; }
+.tin.chosen .tin-name { color: var(--pink); }
+.tin.chosen .tin-name::after { content: ' ·'; }
+.tin .tin-notes { display: block; font-size: 13px; color: var(--dim); margin-top: 2px; max-width: 30rem; }
+.tin[disabled] { cursor: default; }
+
+/* Recipe */
+.recipe { border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; margin-top: 12px; font-size: 13px; }
+.recipe ul, .recipe ol { margin: 6px 0 0; padding-left: 18px; }
+.recipe li { margin: 0 0 3px; }
+.recipe .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+@media (max-width: 480px) { .recipe .cols { grid-template-columns: 1fr; } }
+
+/* Stardew gate */
+.gate-btn { display: block; width: 112px; height: 112px; }
+.gate-btn img.ink { transition: transform 2.4s cubic-bezier(.4,0,.2,1); transform-origin: 50% 90%; }
+.gate-btn:hover img.ink { transform: translateY(-3px); }
+.gate-btn.open img.ink { transform: translateY(-14px) rotate(-8deg); }   /* pulled up out of the ground */
+.gate-reveal { overflow: hidden; max-height: 0; opacity: 0; transition: max-height 3s ease, opacity 3s ease; }
+.gate-reveal.in { max-height: 300px; opacity: 1; }
+.code { font-size: 15px; letter-spacing: .12em; color: var(--pink); padding: 6px 0; display: inline-block; }
+
+/* Visit list */
+.visit-list { list-style: none; margin: 0; padding: 0; }
+.visit-list li { padding: 18px 0; border-top: 1px solid var(--line); display: grid; grid-template-columns: 1fr auto; gap: 6px 18px; align-items: baseline; }
+.visit-list li:last-child { border-bottom: 1px solid var(--line); }
+.visit-list .note { grid-column: 1 / -1; font-size: 13px; color: var(--dim); margin: 0; }
+.visit-list .places a { color: var(--text); text-decoration: none; border-bottom: 1px solid var(--dim); }
+.visit-list .places a:hover { color: var(--pink); border-color: var(--pink); }
+.pill { font-size: 12px; color: var(--dim); white-space: nowrap; }
+.pill.booked { color: var(--pink); }
+.pill.planned { color: var(--text); }
+
+.after .end { color: var(--dim); font-size: 13px; margin-top: 12vh; }   /* .after .end, not .end: the plain ".after p" margin rule outranked it */
+
+/* the now-playing line in the bottom corner while sound is on: the track, and under it the sound it sits on.
+   nowplaying.js sets the words from settings.nowPlaying and fades the line out and in as the memories change */
+.now {
+  position: fixed; z-index: 20; left: max(14px, env(safe-area-inset-left)); bottom: max(14px, env(safe-area-inset-bottom));
+  display: flex; align-items: flex-start; gap: 10px; max-width: min(60vw, 320px); pointer-events: none;
+  font-size: 12px; line-height: 1.5; color: var(--dim); letter-spacing: .01em;
+  opacity: 1; transition: opacity 1.2s ease;
+}
+.now[hidden] { display: none; }
+.now.out { opacity: 0; }
+.now-dot {
+  flex: none; width: 5px; height: 5px; margin-top: 7px; border-radius: 50%; background: var(--pink);
+  box-shadow: 0 0 6px 1px rgba(255,143,184,.5); animation: breathe 3.4s ease-in-out infinite;
+}
+.now-text { display: flex; flex-direction: column; min-width: 0; }
+.now-text span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.now-text span[hidden] { display: none; }
+.now-track { color: var(--text); }
+.now-backing { font-style: italic; }
+.now.ph .now-track, .now.ph .now-backing { color: #5a5257; font-style: normal; }   /* the draft marker, until Austin writes the names */
+
+/* ---- Reduced motion --------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

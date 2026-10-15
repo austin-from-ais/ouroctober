@@ -1,0 +1,5 @@
+# Private values (phone number, redeem code). Never commit this file.
+js/private.js
+.DS_Store
+# The planning brief is personal notes, not part of the site.
+Site for Annika build brief.md

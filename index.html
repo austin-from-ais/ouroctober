@@ -1,0 +1,51 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
+<title></title>
+<link rel="stylesheet" href="css/site.css?v=19">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='3' fill='%23ff8fb8'/%3E%3C/svg%3E">
+</head>
+<body>
+
+<button class="sound" id="soundBtn" type="button" aria-pressed="false">
+  <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 7.5v5h3l4 3.5v-12l-4 3.5z"/><path class="w1" d="M12.5 7.5a3.5 3.5 0 0 1 0 5"/><path class="w2" d="M14.5 5.5a6.5 6.5 0 0 1 0 9"/></svg>
+  <span class="sound-label">sound off</span>
+</button>
+
+<nav class="top" id="topNav" aria-label="Sections">
+  <a href="#" data-go="road" id="navRoad"></a>
+  <a href="#october" data-go="october" id="navOctober"></a>
+  <a href="#visit" data-go="visit" id="navVisit"></a>
+</nav>
+
+<div class="deck" id="deck"></div>
+
+<button class="step prev" id="prevBtn" type="button" aria-label="Back" hidden><i></i></button>
+<button class="step next" id="nextBtn" type="button" aria-label="Next" hidden><i></i></button>
+
+<div class="pages" id="pages" hidden>
+<section class="after" id="october"><div class="col" id="octoberCol"></div></section>
+<section class="after" id="visit"><div class="col" id="visitCol"></div></section>
+</div>
+
+<script src="js/settings.js?v=19"></script>
+<script src="js/private.js?v=19"></script>
+<script src="js/audio.js?v=19"></script>
+<script src="js/nowplaying.js?v=19"></script>
+<script src="js/scenes/photo.js?v=19"></script>
+<script src="js/scenes/drive.js?v=19"></script>
+<script src="js/scenes/dishes.js?v=19"></script>
+<script src="js/scenes/jellies.js?v=19"></script>
+<script src="js/scenes/tacos.js?v=19"></script>
+<script src="js/scenes/cliffs.js?v=19"></script>
+<script src="js/scenes/pillows.js?v=19"></script>
+<script src="js/october.js?v=19"></script>
+<script src="js/main.js?v=19"></script>
+</body>
+</html>
