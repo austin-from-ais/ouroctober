@@ -78,7 +78,7 @@ window.SITE = {
     jellies: { track: "The Bounce · Qendresa",                        backing: "standing by the ocean at monterey bay" },
     tacos:   { track: "Sky Full of Stars · Persona 4 Golden",         backing: "happy midnight patrons at the taco place" },
     cliffs:  { track: "Fontainebleau · Stills-Young Band",            backing: "first time hearing the wind roar over cliffs" },
-    pillows: { track: "7 years together, still unmarried · Leo & Jas", backing: "watching youtube together" }
+    pillows: { track: "Leo and Jas", backing: "watching youtube together" }
   },
 
   // Part two: October.
