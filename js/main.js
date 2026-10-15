@@ -424,15 +424,18 @@
     store.set('sound', on ? 'on' : 'off');
     if (on && mode === 'deck' && cur >= 0) window.SOUND.scene(scenes[cur].id);
   });
-  // sound is on from the start, unless she turned it off last time. the browser only lets it begin after
-  // her first tap or key, so the control reads 'sound on' right away and that first gesture starts it
+  // sound is on from the start, unless she turned it off last time. a browser only lets it begin after her
+  // first tap or key on a first visit, so the control reads 'sound on' right away and that gesture starts it;
+  // once she has used the site before (or allowed sound for it) the browser lets it begin at once, so try that
   if (store.get('sound') !== 'off') {
     setSoundUI(true);
+    var startSound = function () { if (window.SOUND.enable(true) && mode === 'deck' && cur >= 0) window.SOUND.scene(scenes[cur].id); };
+    if (window.SOUND.canStartNow()) startSound();
     var firstTouch = function () {
       document.removeEventListener('pointerdown', firstTouch, true);
       document.removeEventListener('keydown', firstTouch, true);
-      if (window.SOUND.isEnabled() || soundBtn.getAttribute('aria-pressed') !== 'true') return;
-      if (window.SOUND.enable(true) && mode === 'deck' && cur >= 0) window.SOUND.scene(scenes[cur].id);
+      if (soundBtn.getAttribute('aria-pressed') !== 'true') return;
+      if (window.SOUND.isEnabled()) window.SOUND.kick(); else startSound();
     };
     document.addEventListener('pointerdown', firstTouch, true);
     document.addEventListener('keydown', firstTouch, true);

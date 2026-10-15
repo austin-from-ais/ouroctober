@@ -1,5 +1,5 @@
 /*
-  Sound. Off until she turns it on. One quiet ambient loop per scene,
+  Sound. On from the start, beginning at her first tap (or at once, when the browser allows it). One quiet ambient loop per scene,
   generated in the browser so nothing has to download, or a recording
   from settings.audio if one is given. Everything fades over seconds.
 */
@@ -153,7 +153,7 @@ window.SOUND = (function () {
     var node = ctx.createMediaElementSource(el);
     node.connect(out);
     el.play().catch(function () {});
-    return { stop: function () { el.pause(); el.src = ''; } };
+    return { stop: function () { el.pause(); el.src = ''; }, play: function () { if (el.paused) el.play().catch(function () {}); } };
   }
 
   function build(id) {
@@ -161,7 +161,7 @@ window.SOUND = (function () {
     var files = (window.SITE && window.SITE.audio) || {};
     var v = (files[id] ? fileVoice(files[id], g) : (voices[id] ? voices[id](g) : null));
     if (!v) { return null; }
-    return { id: id, gain: g, stop: v.stop, tick: v.tick || null, clink: v.clink || null };
+    return { id: id, gain: g, stop: v.stop, tick: v.tick || null, clink: v.clink || null, play: v.play || null };
   }
 
   function setScene(id) {
@@ -204,6 +204,19 @@ window.SOUND = (function () {
       return enabled;
     },
     isEnabled: function () { return enabled; },
+    // true if the browser lets sound begin without a tap: it does once she has used the site before, or has
+    // allowed sound for it. Keeps the context it made so enable() can use it straight away.
+    canStartNow: function () {
+      if (!ac() || ctx) return !!(ctx && ctx.state === 'running');
+      try {
+        var c = new (ac())();
+        if (c.state === 'running') { ctx = c; master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination); return true; }
+        try { c.close(); } catch (e) {}
+      } catch (e) {}
+      return false;
+    },
+    // her first tap, when sound was already switched on at load: make sure it is really running
+    kick: function () { if (ctx && ctx.state === 'suspended') { try { ctx.resume(); } catch (e) {} } if (current && current.play) current.play(); },
     scene: setScene,
     duck: function (on) { ducked = !!on; applyMaster(); },
     tick: function (id, p, now) {

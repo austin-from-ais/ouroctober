@@ -79,3 +79,5 @@ Approaches that did not work, so nobody tries them again:
 - CSS transitions on the cards with `z-index` swapped at the start of the move: the incoming card painted over the edge of the card still in front.
 - Swapping `z-index` halfway through the move: the outgoing card stayed on top far too long.
 - `transform-style: preserve-3d` on the deck to let the browser sort by depth: on a GPU-rendered page the back card was never obscured at all, whether the dimming used a `filter` or an overlay. Headless software rendering showed it as correct, which is why it got through.
+
+**Sound start (Oct 15, 2026).** Sound is on by default. On a first visit a browser only lets it begin after her first tap or key, so that gesture starts it. On a return visit (or once she has allowed sound for the site) browsers let it begin at once, so the site tries that on load first; `SOUND.canStartNow()` makes a context and keeps it only if the browser started it running. The first tap still runs as a fallback and kicks a context or recording that was created but held back.
